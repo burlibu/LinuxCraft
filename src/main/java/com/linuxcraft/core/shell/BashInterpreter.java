@@ -118,11 +118,38 @@ public class BashInterpreter {
                      }
                      break;
                 default:
-                    computer.writeLine("bash: " + cmd + ": command not found");
+                    // Check if it's a program
+                    String executable = cmd;
+                    if (!executable.contains(".")) {
+                       // Look for .wasm by default if no extension
+                       if (fs.exists(resolvePath(executable + ".wasm"))) {
+                           executable += ".wasm";
+                       }
+                    }
+                    
+                    String path = resolvePath(executable);
+                    if (fs.exists(path)) {
+                        try (java.io.InputStream is = fs.openForRead(path)) {
+                            // Run Wasm
+                            com.linuxcraft.core.wasm.WasmMachine wasm = new com.linuxcraft.core.wasm.WasmMachine(new com.linuxcraft.core.wasm.LinuxSyscalls(computer));
+                            wasm.loadProgram(is);
+                            try {
+                                wasm.tick(); // Run
+                            } catch (Exception e) {
+                                computer.writeLine("Runtime Error: " + e.getMessage());
+                                e.printStackTrace();
+                            }
+                        } catch (java.io.IOException e) {
+                             computer.writeLine("bash: " + cmd + ": " + e.getMessage());
+                        }
+                    } else {
+                        computer.writeLine("bash: " + cmd + ": command not found");
+                    }
                     break;
             }
         } catch (Exception e) {
             computer.writeLine("Error: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

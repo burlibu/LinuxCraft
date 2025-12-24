@@ -11,24 +11,26 @@ public class VirtualFileSystem extends FileSystem {
     
     private final RamMount rootMount;
     private final RomMount romMount;
-    private final java.util.Map<String, IMount> mounts = new java.util.HashMap<>();
+    private final RealFileMount diskMount;
     
     public VirtualFileSystem() {
         super(null); // We handle mounts ourselves
         this.rootMount = new RamMount();
         this.romMount = new RomMount();
+        this.diskMount = new RealFileMount(new java.io.File("linuxcraft_disk")); // Relative to run dir
         
-        mounts.put("rom", romMount);
+        // mounts.put("rom", romMount); // Handled by getter logic currently
         
         // Initial files
         rootMount.writeFile("readme.txt", "Welcome to LinuxCraft!".getBytes());
     }
 
     private IMount getMount(String path) {
-        // Simple check: if starts with "rom", use romMount
-        // In real impl, we should match longest prefix
         if (path.equals("rom") || path.startsWith("rom/")) {
             return romMount;
+        }
+        if (path.equals("disk") || path.startsWith("disk/")) {
+            return diskMount;
         }
         return rootMount;
     }
@@ -36,20 +38,22 @@ public class VirtualFileSystem extends FileSystem {
     private String getMountPath(String path) {
         if (path.equals("rom")) return "";
         if (path.startsWith("rom/")) return path.substring(4);
+        if (path.equals("disk")) return "";
+        if (path.startsWith("disk/")) return path.substring(5);
         return path;
     }
 
     @Override
     public boolean exists(String path) {
         path = cleanPath(path);
-        if (path.equals("rom")) return true; // It's a mount point
+        if (path.equals("rom") || path.equals("disk")) return true; 
         return getMount(path).exists(getMountPath(path));
     }
 
     @Override
     public boolean isDirectory(String path) {
         path = cleanPath(path);
-        if (path.equals("rom")) return true;
+        if (path.equals("rom") || path.equals("disk")) return true;
         return getMount(path).isDirectory(getMountPath(path));
     }
 
@@ -58,13 +62,11 @@ public class VirtualFileSystem extends FileSystem {
         path = cleanPath(path);
         List<String> results = getMount(path).list(getMountPath(path));
         
-        // If we are at root, we must add "rom" manually if it's not a real folder in rootMount
         if (path.isEmpty()) {
-            if (!results.contains("rom")) {
-                List<String> combined = new ArrayList<>(results);
-                combined.add("rom");
-                return combined;
-            }
+            List<String> combined = new ArrayList<>(results);
+            if (!combined.contains("rom")) combined.add("rom");
+            if (!combined.contains("disk")) combined.add("disk");
+            return combined;
         }
         return results;
     }
@@ -79,8 +81,16 @@ public class VirtualFileSystem extends FileSystem {
     public void makeDirectory(String path) throws IOException {
         path = cleanPath(path);
         IMount mount = getMount(path);
+        // Only allow writing to Ram or Disk
+        // Rom is read only
         if (mount instanceof RamMount ram) {
             ram.makeDirectory(getMountPath(path));
+        } else if (mount instanceof RealFileMount) {
+            // Real file mount doesn't have makeDirectory exposed in IMount interface yet?
+            // Oops, IMount doesn't have write methods. We casted to RamMount before.
+            // Let's postpone writing to disk for a second or update IMount. 
+            // For now just error if not ram.
+            throw new IOException("Cannot write to this mount (Implementation Pending)");
         } else {
             throw new IOException("Cannot write to read-only mount");
         }
