@@ -26,19 +26,26 @@ public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
     private int cursorX = 0;
     private int cursorY = 0;
     
+    private com.linuxcraft.core.filesystem.FileSystem fileSystem;
     private com.linuxcraft.core.shell.BashInterpreter shell;
 
     public ComputerBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.COMPUTER_BE.get(), pPos, pBlockState);
+        
+        // Init Filesystem
+        this.fileSystem = new com.linuxcraft.core.filesystem.FileSystem(new com.linuxcraft.core.filesystem.RomMount());
+        
         // Fill with space
         for(int i=0; i<screenBuffer.length; i++) screenBuffer[i] = ' ';
         
         // Debug text
         writeStr(0, 0, "LinuxCraft BIOS v0.0.1");
-        writeStr(0, 1, "Initializing Shell...");
+        writeStr(0, 1, "Mounting ROM...");
+        writeStr(0, 2, "Initializing Shell...");
         
         cursorY = 2;
-        shell = new com.linuxcraft.core.shell.BashInterpreter(this);
+        shell = new com.linuxcraft.core.shell.BashInterpreter(this, this.fileSystem);
+        newLine();
     }
 
     public void handleInput(int keyCode, int scanCode, int modifiers, char typedChar) {

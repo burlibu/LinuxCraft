@@ -6,15 +6,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BashInterpreter {
+
+    private final com.linuxcraft.core.filesystem.FileSystem fs;
     private final ComputerBlockEntity computer;
     private StringBuilder currentLine = new StringBuilder();
     private List<String> history = new ArrayList<>();
     private String currentDirectory = "/";
 
-    public BashInterpreter(ComputerBlockEntity computer) {
+    public BashInterpreter(ComputerBlockEntity computer, com.linuxcraft.core.filesystem.FileSystem fs) {
         this.computer = computer;
+        this.fs = fs;
         printPrompt();
     }
+
+    // ... handleChar/handleKey ...
 
     public void handleChar(char c) {
         if (c >= 32 && c < 127) {
@@ -54,36 +59,40 @@ public class BashInterpreter {
         String[] parts = line.split("\\s+");
         String cmd = parts[0];
 
-        switch (cmd) {
-            case "help":
-                computer.writeLine("LinuxCraft Bash v1.0");
-                computer.writeLine("Commands: help, clear, ls, cd, echo");
-                break;
-            case "clear":
-                computer.clearScreen();
-                break;
-            case "echo":
-                if (parts.length > 1) {
-                    computer.writeLine(line.substring(5));
-                }
-                break;
-            case "ls":
-                computer.writeLine("bin  home  usr  var");
-                break;
-            case "cd":
-                 if (parts.length > 1) {
-                     if(parts[1].equals("..")) {
-                         currentDirectory = "/"; // Mock parent
-                     } else {
-                         currentDirectory = "/" + parts[1]; // Mock cd
+        try {
+            switch (cmd) {
+                case "help":
+                    computer.writeLine("LinuxCraft Bash v1.0");
+                    computer.writeLine("Commands: help, clear, ls, cd, echo");
+                    break;
+                case "clear":
+                    computer.clearScreen();
+                    break;
+                case "echo":
+                    if (parts.length > 1) {
+                        computer.writeLine(line.substring(5));
+                    }
+                    break;
+                case "ls":
+                    List<String> files = fs.list(currentDirectory);
+                    if (files.isEmpty()) {
+                        // computer.writeLine("(empty)");
+                    } else {
+                        computer.writeLine(String.join("  ", files));
+                    }
+                    break;
+                case "cd":
+                     // Basic mock support for CD as we only have root mount for now
+                     if (parts.length > 1) {
+                         computer.writeLine("cd: directories not implemented fully yet");
                      }
-                 } else {
-                     currentDirectory = "/";
-                 }
-                 break;
-            default:
-                computer.writeLine("bash: " + cmd + ": command not found");
-                break;
+                     break;
+                default:
+                    computer.writeLine("bash: " + cmd + ": command not found");
+                    break;
+            }
+        } catch (Exception e) {
+            computer.writeLine("Error: " + e.getMessage());
         }
     }
 }
