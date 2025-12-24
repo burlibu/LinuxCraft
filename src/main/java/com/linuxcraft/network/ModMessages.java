@@ -1,43 +1,26 @@
 package com.linuxcraft.network;
 
 import com.linuxcraft.LinuxCraft;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.neoforged.fml.common.EventBusSubscriber;
 
+@EventBusSubscriber(modid = LinuxCraft.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class ModMessages {
-    private static SimpleChannel INSTANCE;
-
-    private static int packetId = 0;
-    private static int id() {
-        return packetId++;
-    }
 
     public static void register() {
-        SimpleChannel net = NetworkRegistry.ChannelBuilder
-                .named(new ResourceLocation(LinuxCraft.MOD_ID, "messages"))
-                .networkProtocolVersion(() -> "1.0")
-                .clientAcceptedVersions(s -> true)
-                .serverAcceptedVersions(s -> true)
-                .simpleChannel();
-
-        INSTANCE = net;
-
-        net.messageBuilder(PacketStoreKeyDown.class, id(), NetworkDirection.PLAY_TO_SERVER)
-                .decoder(PacketStoreKeyDown::new)
-                .encoder(PacketStoreKeyDown::toBytes)
-                .consumerMainThread(PacketStoreKeyDown::handle)
-                .add();
+         // No-op, registration happens via event
     }
 
-    public static <MSG> void sendToServer(MSG message) {
-        INSTANCE.sendToServer(message);
-    }
-
-    public static <MSG> void sendToPlayer(MSG message, ServerPlayer player) {
-        INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), message);
+    @SubscribeEvent
+    public static void register(RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar registrar = event.registrar("1");
+        registrar.playToServer(
+                PacketStoreKeyDown.TYPE,
+                PacketStoreKeyDown.STREAM_CODEC,
+                PacketStoreKeyDown::handle
+        );
     }
 }

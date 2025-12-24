@@ -19,7 +19,17 @@ public class BashInterpreter {
         printPrompt();
     }
 
-    // ... handleChar/handleKey ...
+    public void handleInput(String input) {
+        if (input.length() > 0) {
+             // If input is \n or \r, treat as enter
+             char c = input.charAt(0);
+             if (c == '\n' || c == '\r') {
+                 handleKey(257); // Enter key code
+             } else {
+                 handleChar(c);
+             }
+        }
+    }
 
     public void handleChar(char c) {
         if (c >= 32 && c < 127) {
@@ -80,11 +90,31 @@ public class BashInterpreter {
                     } else {
                         computer.writeLine(String.join("  ", files));
                     }
-                    break;
-                case "cd":
-                     // Basic mock support for CD as we only have root mount for now
+                     break;
+                case "mkdir":
                      if (parts.length > 1) {
-                         computer.writeLine("cd: directories not implemented fully yet");
+                         String newPath = resolvePath(parts[1]);
+                         if (fs.exists(newPath)) {
+                             computer.writeLine("mkdir: cannot create directory '" + parts[1] + "': File exists");
+                         } else {
+                             fs.makeDirectory(newPath);
+                         }
+                     } else {
+                         computer.writeLine("mkdir: missing operand");
+                     }
+                     break;
+                case "cd":
+                     if (parts.length > 1) {
+                         String newPath = resolvePath(parts[1]);
+                         if (fs.isDirectory(newPath)) {
+                             this.currentDirectory = newPath;
+                             this.currentDirectory = this.currentDirectory.endsWith("/") ? this.currentDirectory : this.currentDirectory + "/";
+                         } else {
+                             computer.writeLine("bash: cd: " + parts[1] + ": Not a directory");
+                         }
+                     } else {
+                         // cd home or root?
+                         this.currentDirectory = "/";
                      }
                      break;
                 default:
@@ -94,5 +124,30 @@ public class BashInterpreter {
         } catch (Exception e) {
             computer.writeLine("Error: " + e.getMessage());
         }
+    }
+
+    private String resolvePath(String path) {
+        if (path.equals("/")) return "/";
+        
+        String base = path.startsWith("/") ? "/" : currentDirectory;
+        if (!base.endsWith("/")) base += "/";
+        
+        // Simple resolution
+        String fullPath = path.startsWith("/") ? path : base + path;
+        
+        // Handle .. (hacky)
+        // In real impl, split by / and stack
+        java.util.Stack<String> stack = new java.util.Stack<>();
+        for (String part : fullPath.split("/")) {
+            if (part.isEmpty() || part.equals(".")) continue;
+            if (part.equals("..")) {
+                if (!stack.isEmpty()) stack.pop();
+            } else {
+                stack.push(part);
+            }
+        }
+        
+        if (stack.isEmpty()) return "/";
+        return String.join("/", stack);
     }
 }

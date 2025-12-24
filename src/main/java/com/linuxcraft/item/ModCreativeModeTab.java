@@ -6,18 +6,17 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ModCreativeModeTab {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, LinuxCraft.MOD_ID);
 
-    public static final RegistryObject<CreativeModeTab> LINUXCRAFT_TAB = CREATIVE_MODE_TABS.register("linuxcraft_tab",
-            () -> CreativeModeTab.builder()
-                    .icon(() -> new ItemStack(ModBlocks.COMPUTER_BLOCK.get()))
-                    .title(Component.translatable("creativetab.linuxcraft_tab"))
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> LINUX_TAB = CREATIVE_MODE_TABS.register("linux_tab",
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModBlocks.COMPUTER_BLOCK.get()))
+                    .title(Component.translatable("creativetab.linux_tab"))
                     .displayItems((pParameters, pOutput) -> {
                         pOutput.accept(ModBlocks.COMPUTER_BLOCK.get());
                     })

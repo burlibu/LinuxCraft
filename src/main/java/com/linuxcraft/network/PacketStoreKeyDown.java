@@ -1,56 +1,43 @@
 package com.linuxcraft.network;
 
+import com.linuxcraft.LinuxCraft;
 import com.linuxcraft.block.entity.ComputerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+public record PacketStoreKeyDown(BlockPos pos, int keyCode, int scanCode, int modifiers, char typedChar) implements CustomPacketPayload {
 
-public class PacketStoreKeyDown {
-    private final BlockPos pos;
-    private final int keyCode;
-    private final int scanCode;
-    private final int modifiers;
-    private final char typedChar;
+    public static final CustomPacketPayload.Type<PacketStoreKeyDown> TYPE = new CustomPacketPayload.Type<>(
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(LinuxCraft.MOD_ID, "store_key_down"));
 
-    public PacketStoreKeyDown(BlockPos pos, int keyCode, int scanCode, int modifiers, char typedChar) {
-        this.pos = pos;
-        this.keyCode = keyCode;
-        this.scanCode = scanCode;
-        this.modifiers = modifiers;
-        this.typedChar = typedChar;
+    public static final StreamCodec<FriendlyByteBuf, PacketStoreKeyDown> STREAM_CODEC = StreamCodec.composite(
+        BlockPos.STREAM_CODEC, PacketStoreKeyDown::pos,
+        net.minecraft.network.codec.ByteBufCodecs.INT, PacketStoreKeyDown::keyCode,
+        net.minecraft.network.codec.ByteBufCodecs.INT, PacketStoreKeyDown::scanCode,
+        net.minecraft.network.codec.ByteBufCodecs.INT, PacketStoreKeyDown::modifiers,
+        net.minecraft.network.codec.ByteBufCodecs.VAR_INT.map(i -> (char) i.intValue(), c -> (int) c), PacketStoreKeyDown::typedChar,
+        PacketStoreKeyDown::new
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public PacketStoreKeyDown(FriendlyByteBuf buf) {
-        this.pos = buf.readBlockPos();
-        this.keyCode = buf.readInt();
-        this.scanCode = buf.readInt();
-        this.modifiers = buf.readInt();
-        this.typedChar = buf.readChar();
-    }
-
-    public void toBytes(FriendlyByteBuf buf) {
-        buf.writeBlockPos(pos);
-        buf.writeInt(keyCode);
-        buf.writeInt(scanCode);
-        buf.writeInt(modifiers);
-        buf.writeChar(typedChar);
-    }
-
-    public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player != null) {
-                BlockEntity entity = player.level().getBlockEntity(pos);
-                if (entity instanceof ComputerBlockEntity) {
-                    ((ComputerBlockEntity) entity).handleInput(keyCode, scanCode, modifiers, typedChar);
+    public static void handle(PacketStoreKeyDown payload, IPayloadContext context) {
+         context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                BlockEntity entity = player.level().getBlockEntity(payload.pos());
+                if (entity instanceof ComputerBlockEntity computer) {
+                    computer.handleInput(payload.keyCode(), payload.scanCode(), payload.modifiers(), payload.typedChar());
                 }
             }
         });
-        return true;
     }
 }

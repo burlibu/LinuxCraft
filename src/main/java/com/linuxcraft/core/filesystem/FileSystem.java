@@ -37,4 +37,15 @@ public class FileSystem {
     public InputStream openForRead(String path) throws IOException {
         return rootMount.openForRead(cleanPath(path));
     }
+    
+    public void makeDirectory(String path) throws IOException {
+        throw new IOException("Read-only filesystem");
+    }
+
+    public net.minecraft.nbt.CompoundTag serializeNBT() {
+        return new net.minecraft.nbt.CompoundTag();
+    }
+
+    public void deserializeNBT(net.minecraft.nbt.CompoundTag tag) {
+    }
 }

@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import net.minecraft.world.entity.player.Inventory;
 
@@ -54,9 +55,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
-        renderTooltip(guiGraphics, mouseX, mouseY);
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
         
         // Render Terminal Text
         renderTerminalText(guiGraphics);
@@ -68,7 +69,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         // 256 is Escape, let it close GUI
         if (keyCode == 256) return super.keyPressed(keyCode, scanCode, modifiers);
         
-        com.linuxcraft.network.ModMessages.sendToServer(new com.linuxcraft.network.PacketStoreKeyDown(
+        PacketDistributor.sendToServer(new com.linuxcraft.network.PacketStoreKeyDown(
             this.menu.blockEntity.getBlockPos(), keyCode, scanCode, modifiers, (char)0));
             
         return true; 
@@ -76,7 +77,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        com.linuxcraft.network.ModMessages.sendToServer(new com.linuxcraft.network.PacketStoreKeyDown(
+        PacketDistributor.sendToServer(new com.linuxcraft.network.PacketStoreKeyDown(
             this.menu.blockEntity.getBlockPos(), 0, 0, modifiers, codePoint));
         return true;
     }
@@ -103,6 +104,29 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             gfx.pose().scale(0.5f, 0.5f, 1.0f);
             gfx.drawString(this.font, line.toString(), 0, 0, 0xFFFFFFFF);
             gfx.pose().popPose();
+        }
+
+        // Blinking Cursor
+        long time = java.lang.System.currentTimeMillis();
+        if (time % 1000 < 500) {
+           ComputerBlockEntity be = this.menu.blockEntity;
+           int cx = be.getCursorX();
+           int cy = be.getCursorY();
+           if (cx >= 0 && cx < width && cy >= 0 && cy < height) {
+               gfx.pose().pushPose();
+               // Same translation logic as text loop
+               // x pos = startX + (cx * charWidth * scale) ??
+               // Font width approx 6 with scale 0.5 -> 3 pixels per char?
+               // Standard font width is variable but monospace approximation is 6 for "Default" usually if monospace.
+               // Actually Minecraft font is variable width.
+               // We used "drawInBatch" with x*6 in renderer, so we assumed 6 px width.
+               // Here we are using drawString. Let's assume 3px width for 0.5 scale (6 * 0.5).
+               
+               gfx.pose().translate(startX + (cx * 3), startY + (cy * 6), 0);
+               gfx.pose().scale(0.5f, 0.5f, 1.0f);
+               gfx.drawString(this.font, "_", 0, 0, 0xFFFFFFFF);
+               gfx.pose().popPose();
+           }
         }
     }
 }

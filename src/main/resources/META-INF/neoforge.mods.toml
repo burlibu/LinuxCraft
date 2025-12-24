@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+#issueTrackerURL=""
+
+[[mods]]
+modId="linuxcraft"
+version="0.0.1"
+displayName="LinuxCraft"
+logoFile="logo.png"
+authors="burlibu"
+description="A mod that implements a simulated Linux OS using WebAssembly."
+
+[[dependencies.linuxcraft]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.linuxcraft]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21,1.22)"
+    ordering="NONE"
+    side="BOTH"

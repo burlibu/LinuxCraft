@@ -55,7 +55,9 @@ public class ComputerBlockRenderer implements BlockEntityRenderer<ComputerBlockE
         // Width = 51 * 6 = 306. 306 * 0.003 = 0.918
         // Height = 19 * 10 = 190. 190 * 0.003 = 0.57
         
-        pPoseStack.translate(-0.45, 0.28, 0); // Top-Left of screen (Centered X, slightly up Y)
+        // Aligned to (2,2) pixels from Top-Left
+        // Top-Left is (-0.5, 0.5). +2 pixels X (0.125), -2 pixels Y (0.125)
+        pPoseStack.translate(-0.375, 0.375, 0); 
         pPoseStack.scale(scale, -scale, scale); // Flip Y
         
         char[] buffer = pBlockEntity.getBuffer();
@@ -70,6 +72,17 @@ public class ComputerBlockRenderer implements BlockEntityRenderer<ComputerBlockE
             }
             // Draw White Text (0xFFFFFFFF)
             this.font.drawInBatch(line.toString(), 0, y * 10, 0xFFFFFFFF, false, pPoseStack.last().pose(), pBufferSource, Font.DisplayMode.NORMAL, 0, pPackedLight);
+        }
+
+        // Blinking Cursor
+        long time = java.lang.System.currentTimeMillis();
+        if (time % 1000 < 500) {
+            int cx = pBlockEntity.getCursorX();
+            int cy = pBlockEntity.getCursorY();
+            if (cx >= 0 && cx < width && cy >= 0 && cy < ComputerBlockEntity.HEIGHT) {
+                // Draw cursor at cx, cy
+                this.font.drawInBatch("_", cx * 6, cy * 10, 0xFFFFFFFF, false, pPoseStack.last().pose(), pBufferSource, Font.DisplayMode.NORMAL, 0, pPackedLight);
+            }
         }
 
         pPoseStack.popPose();

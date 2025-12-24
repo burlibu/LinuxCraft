@@ -1,0 +1,90 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.8/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :clean
+> Task :createArtifactManifest
+
+> Task :createMinecraftArtifacts
+Loaded 124 artifacts from C:\Users\alebu\Desktop\Minecraft\LinuxCraft\build\moddev\nfrt_artifact_manifest.properties
+[1m*** Started working on [4mdownloadJson[0m[0m
+ [1m[92mDONE [0m Completed [4mdownloadJson[0m in 0.02s
+[1m*** Started working on [4mdownloadClientMappings[0m[0m
+[1m*** Started working on [4mdownloadClient[0m[0m
+[1m*** Started working on [4mdownloadServer[0m[0m
+[1m*** Started working on [4mlistLibraries[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mlistLibraries[0m in 0.00s
+ [1m[92mDONE [0m Completed [4mdownloadServer[0m in 0.03s
+ [1m[92mDONE [0m Completed [4mdownloadClient[0m in 0.03s
+ [1m[92mDONE [0m Completed [4mdownloadClientMappings[0m in 0.03s
+[1m*** Started working on [4mmergeMappings[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mmergeMappings[0m in 0.00s
+[1m*** Started working on [4mstripClient[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mstripClient[0m in 0.00s
+[1m*** Started working on [4mextractServer[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mextractServer[0m in 0.00s
+[1m*** Started working on [4mstripServer[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mstripServer[0m in 0.00s
+[1m*** Started working on [4mmerge[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mmerge[0m in 0.00s
+[1m*** Started working on [4mrename[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mrename[0m in 0.00s
+[1m*** Started working on [4mdecompile[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mdecompile[0m in 0.00s
+[1m*** Started working on [4minject[0m[0m
+ [1m[92mREUSE[0m Used cache of [4minject[0m in 0.00s
+[1m*** Started working on [4mpatch[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mpatch[0m in 0.00s
+[1m*** Started working on [4mapplyNeoforgePatches[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mapplyNeoforgePatches[0m in 0.00s
+[1m*** Started working on [4mtransformSources[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mtransformSources[0m in 0.00s
+[1m*** Started working on [4mrecompile[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mrecompile[0m in 0.00s
+[1m*** Started working on [4msourcesWithNeoForge[0m[0m
+ [1m[92mREUSE[0m Used cache of [4msourcesWithNeoForge[0m in 0.00s
+[1m*** Started working on [4mcompiledWithNeoForge[0m[0m
+ [1m[92mREUSE[0m Used cache of [4mcompiledWithNeoForge[0m in 0.00s
+[1m*** Started working on [4msourcesAndCompiledWithNeoForge[0m[0m
+ [1m[92mREUSE[0m Used cache of [4msourcesAndCompiledWithNeoForge[0m in 0.00s
+Total runtime: 0.79s
+
+
+> Task :compileJava FAILED
+C:\Users\alebu\Desktop\Minecraft\LinuxCraft\src\main\java\com\linuxcraft\block\ComputerBlock.java:68: error: invalid method reference
+                ComputerBlockEntity::tick);
+                ^
+  cannot find symbol
+    symbol:   method tick()
+    location: class ComputerBlockEntity
+C:\Users\alebu\Desktop\Minecraft\LinuxCraft\src\main\java\com\linuxcraft\block\entity\ComputerBlockEntity.java:43: error: incompatible types: VirtualFileSystem cannot be converted to FileSystem
+        this.shell = new BashInterpreter(this, this.fileSystem); // Shell needs 'this'
+                                                   ^
+C:\Users\alebu\Desktop\Minecraft\LinuxCraft\src\main\java\com\linuxcraft\client\screen\TerminalScreen.java:58: error: method renderBackground in class AbstractContainerScreen<T> cannot be applied to given types;
+        renderBackground(guiGraphics);
+        ^
+  required: GuiGraphics,int,int,float
+  found:    GuiGraphics
+  reason: actual and formal argument lists differ in length
+  where T is a type-variable:
+    T extends AbstractContainerMenu declared in class AbstractContainerScreen
+C:\Users\alebu\Desktop\Minecraft\LinuxCraft\src\main\java\com\linuxcraft\network\PacketStoreKeyDown.java:38: error: cannot find symbol
+                    computer.handleInput(payload.keyCode(), payload.scanCode(), payload.modifiers(), payload.typedChar());
+                            ^
+  symbol:   method handleInput(int,int,int,char)
+  location: variable computer of type ComputerBlockEntity
+Note: C:\Users\alebu\Desktop\Minecraft\LinuxCraft\src\main\java\com\linuxcraft\core\wasm\LinuxSyscalls.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some messages have been simplified; recompile with -Xdiags:verbose to get full output
+4 errors
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --info option to get more log output.
+> Run with --scan to get full insights.
+
+BUILD FAILED in 7s
+4 actionable tasks: 4 executed
