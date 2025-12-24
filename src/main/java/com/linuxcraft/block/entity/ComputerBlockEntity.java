@@ -23,79 +23,96 @@ public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
     private char[] screenBuffer = new char[WIDTH * HEIGHT];
 
 
+    private int cursorX = 0;
+    private int cursorY = 0;
+    
+    private com.linuxcraft.core.shell.BashInterpreter shell;
+
     public ComputerBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.COMPUTER_BE.get(), pPos, pBlockState);
         // Fill with space
         for(int i=0; i<screenBuffer.length; i++) screenBuffer[i] = ' ';
+        
         // Debug text
         writeStr(0, 0, "LinuxCraft BIOS v0.0.1");
-        writeStr(0, 1, "Initializing WASM Core...");
+        writeStr(0, 1, "Initializing Shell...");
+        
+        cursorY = 2;
+        shell = new com.linuxcraft.core.shell.BashInterpreter(this);
     }
-
-    public void tick() {
-        // Will handle Wasm simulation here
-    }
-    
-    public void writeChar(int x, int y, char c) {
-        if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
-            screenBuffer[y * WIDTH + x] = c;
-        }
-    }
-    
-    public void writeStr(int x, int y, String s) {
-        for (int i = 0; i < s.length(); i++) {
-            writeChar(x + i, y, s.charAt(i));
-        }
-    }
-
-    public char[] getBuffer() {
-        return screenBuffer;
-    }
-
-    @Override
-    public Component getDisplayName() {
-        return Component.literal("LinuxCraft Terminal");
-    }
-
-    @Nullable
-    @Override
-    public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
-        return new TerminalMenu(pContainerId, pPlayerInventory, this, new net.minecraft.world.inventory.SimpleContainerData(2));
-    }
-
-    // Cursor position
-    private int cursorX = 0;
-    private int cursorY = 2; // Start below debug text
 
     public void handleInput(int keyCode, int scanCode, int modifiers, char typedChar) {
-        // Basic Echo Implementation
-        // 257 = Enter ? In GLFW
-        if (keyCode == 257) { // Enter
-            cursorX = 0;
-            cursorY++;
-            if (cursorY >= HEIGHT) cursorY = HEIGHT - 1; // Scroll? Later.
-        } else if (keyCode == 259) { // Backspace
-            if (cursorX > 0) {
-                cursorX--;
-                writeChar(cursorX, cursorY, ' ');
-            }
-        } else {
-            // Printable char
-            if (typedChar >= 32 && typedChar < 127) {
-                 writeChar(cursorX, cursorY, typedChar);
-                 cursorX++;
-                 if (cursorX >= WIDTH) {
-                     cursorX = 0;
-                     cursorY++;
-                 }
+        if (shell != null) {
+            if (typedChar != 0) {
+                shell.handleChar(typedChar);
+            } else {
+                shell.handleKey(keyCode);
             }
         }
         
-        // Mark block for update so client sees it
         setChanged();     
         if (level != null) {
             level.sendBlockUpdated(this.worldPosition, getBlockState(), getBlockState(), 3);
         }
+    }
+
+    // --- Screen API for Shell ---
+
+    public int getCursorX() { return cursorX; }
+    public int getCursorY() { return cursorY; }
+
+    public void advanceCursor() {
+        cursorX++;
+        if (cursorX >= WIDTH) {
+            cursorX = 0;
+            cursorY++;
+            if (cursorY >= HEIGHT) scrollUp();
+        }
+    }
+    
+    public void newLine() {
+        cursorX = 0;
+        cursorY++;
+        if (cursorY >= HEIGHT) scrollUp();
+    }
+    
+    public void backspace() {
+        if (cursorX > 0) {
+            cursorX--;
+            writeChar(cursorX, cursorY, ' ');
+        } else if (cursorY > 0) {
+             // Wrap back to previous line? stick to simple for now
+        }
+    }
+    
+    public void writeLine(String s) {
+        writeStr(s);
+        newLine();
+    }
+    
+    public void writeStr(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            writeChar(cursorX, cursorY, s.charAt(i));
+            advanceCursor();
+        }
+    }
+
+    public void clearScreen() {
+        for(int i=0; i<screenBuffer.length; i++) screenBuffer[i] = ' ';
+        cursorX = 0;
+        cursorY = 0;
+    }
+
+    private void scrollUp() {
+        // Shift all lines up by 1
+        for (int y = 0; y < HEIGHT - 1; y++) {
+            System.arraycopy(screenBuffer, (y + 1) * WIDTH, screenBuffer, y * WIDTH, WIDTH);
+        }
+        // Clear last line
+        for (int x = 0; x < WIDTH; x++) {
+            screenBuffer[(HEIGHT - 1) * WIDTH + x] = ' ';
+        }
+        cursorY = HEIGHT - 1;
     }
     
     @Override
@@ -119,6 +136,32 @@ public class ComputerBlockEntity extends BlockEntity implements MenuProvider {
              if (s.length() == screenBuffer.length) {
                  screenBuffer = s.toCharArray();
              }
+        }
+    }
+    @Override
+    public Component getDisplayName() {
+        return Component.literal("LinuxCraft Terminal");
+    }
+
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
+        return new TerminalMenu(pContainerId, pPlayerInventory, this, new net.minecraft.world.inventory.SimpleContainerData(2));
+    }
+
+    public char[] getBuffer() {
+        return screenBuffer;
+    }
+    
+    public void writeChar(int x, int y, char c) {
+        if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+            screenBuffer[y * WIDTH + x] = c;
+        }
+    }
+    
+    public void writeStr(int x, int y, String s) {
+        for (int i = 0; i < s.length(); i++) {
+            writeChar(x + i, y, s.charAt(i));
         }
     }
 }
